@@ -34,6 +34,41 @@ def get_canvas_credentials():
     
     return url, token
 
+def get_canvas_assignments():
+    """Get assignments from Canvas for the next 10 weeks."""
+    try:
+        url, token = get_canvas_credentials()
+        canvas = Canvas(url, token)
+        return get_assignments(canvas)
+    except Exception as e:
+        print(f"Error getting assignments: {str(e)}")
+        return []
+
+def get_canvas_schedule():
+    """Get class schedule from Canvas."""
+    try:
+        url, token = get_canvas_credentials()
+        canvas = Canvas(url, token)
+        courses = canvas.get_courses()
+        
+        schedule = []
+        for course in courses:
+            try:
+                course_name = getattr(course, 'name', f'Course {course.id}')
+                schedule.append({
+                    'id': course.id,
+                    'name': course_name,
+                    'code': getattr(course, 'course_code', ''),
+                    'term': getattr(course, 'term', {}).get('name', '')
+                })
+            except Exception as e:
+                print(f"Error getting schedule for course {getattr(course, 'id', 'Unknown')}: {str(e)}")
+        
+        return schedule
+    except Exception as e:
+        print(f"Error getting schedule: {str(e)}")
+        return []
+
 def get_assignments(canvas):
     """Fetch assignments from specific courses for the next 10 weeks."""
     assignments = []
