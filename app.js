@@ -29,7 +29,7 @@ document.querySelectorAll('.tab-button').forEach(button => {
     });
 });
 
-// API endpoint
+// API endpoint - Update this to your actual Render.com URL
 const API_URL = 'https://canvas-calendar-api.onrender.com/api/all';
 
 // DOM elements
@@ -38,15 +38,20 @@ const scheduleList = document.getElementById('schedule-list');
 
 // Format date for display
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return dateString;
+    }
 }
 
 // Display assignments
@@ -98,22 +103,42 @@ function displaySchedule(schedule) {
 // Fetch data from API
 async function fetchData() {
     try {
+        console.log('Fetching data from:', API_URL);
         const response = await fetch(API_URL);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch data');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('Received data:', data);
+        
+        if (!data || (!data.assignments && !data.schedule)) {
+            throw new Error('Invalid data format received from API');
+        }
+        
         displayAssignments(data.assignments);
         displaySchedule(data.schedule);
     } catch (error) {
-        console.error('Error:', error);
-        assignmentsList.innerHTML = '<div class="error">Failed to load assignments</div>';
-        scheduleList.innerHTML = '<div class="error">Failed to load schedule</div>';
+        console.error('Error fetching data:', error);
+        assignmentsList.innerHTML = `
+            <div class="error">
+                <i class="bi bi-exclamation-triangle"></i>
+                Failed to load assignments. Please check the console for details.
+            </div>`;
+        scheduleList.innerHTML = `
+            <div class="error">
+                <i class="bi bi-exclamation-triangle"></i>
+                Failed to load schedule. Please check the console for details.
+            </div>`;
     }
 }
 
 // Initial load
-fetchData();
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, fetching data...');
+    fetchData();
+});
 
 // Refresh data every 5 minutes
 setInterval(fetchData, 5 * 60 * 1000); 
