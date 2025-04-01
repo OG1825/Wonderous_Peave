@@ -16,4 +16,6 @@ services:
       - key: SMTP_SERVER
         sync: false
       - key: SMTP_PORT
-        sync: false 
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true 
