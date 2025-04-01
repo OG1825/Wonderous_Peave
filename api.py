@@ -11,6 +11,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+load_dotenv()
+
 app = Flask(__name__)
 # Configure CORS with specific options
 CORS(app, resources={
@@ -24,6 +27,16 @@ CORS(app, resources={
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
+
+@app.route('/')
+def home():
+    return jsonify({
+        'status': 'running',
+        'endpoints': {
+            'health': '/api/health',
+            'data': '/api/all'
+        }
+    })
 
 @app.route('/api/all')
 def get_all_data():
@@ -49,5 +62,5 @@ def health_check():
     return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
-    load_dotenv()  # Load environment variables
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port) 
