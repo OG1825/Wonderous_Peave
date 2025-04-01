@@ -1,10 +1,16 @@
 import os
 from datetime import datetime, timedelta
 from canvasapi import Canvas
-from rich.console import Console
-from rich.table import Table
-from rich.prompt import Prompt
 from dotenv import load_dotenv
+
+# Try to import rich, but don't fail if it's not available
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.prompt import Prompt
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
 
 def get_canvas_credentials():
     """Get Canvas credentials from environment variables or user input."""
@@ -13,9 +19,13 @@ def get_canvas_credentials():
     token = os.getenv('CANVAS_TOKEN')
     
     if not url or not token:
-        print("Please enter your Canvas credentials:")
-        url = Prompt.ask("Canvas URL (e.g., https://canvas.instructure.com)")
-        token = Prompt.ask("Canvas API Token", password=True)
+        if RICH_AVAILABLE:
+            print("Please enter your Canvas credentials:")
+            url = Prompt.ask("Canvas URL (e.g., https://canvas.instructure.com)")
+            token = Prompt.ask("Canvas API Token", password=True)
+        else:
+            url = input("Canvas URL (e.g., https://canvas.instructure.com): ")
+            token = input("Canvas API Token: ")
         
         # Save credentials to .env file
         with open('.env', 'w') as f:
@@ -59,6 +69,13 @@ def get_assignments(canvas):
     return sorted(assignments, key=lambda x: x['due_date'])
 
 def display_calendar(assignments):
+    """Display assignments in a calendar format."""
+    if RICH_AVAILABLE:
+        display_calendar_rich(assignments)
+    else:
+        display_calendar_simple(assignments)
+
+def display_calendar_rich(assignments):
     """Display assignments in a calendar format using rich."""
     console = Console()
     
@@ -71,17 +88,17 @@ def display_calendar(assignments):
         
         if current_week != week_start:
             if current_week is not None:
-                display_week(console, current_week, week_assignments)
+                display_week_rich(console, current_week, week_assignments)
             current_week = week_start
             week_assignments = []
         
         week_assignments.append(assignment)
     
     if week_assignments:
-        display_week(console, current_week, week_assignments)
+        display_week_rich(console, current_week, week_assignments)
 
-def display_week(console, week_start, assignments):
-    """Display assignments for a specific week."""
+def display_week_rich(console, week_start, assignments):
+    """Display assignments for a specific week using rich."""
     table = Table(title=f"Week of {week_start.strftime('%B %d, %Y')}")
     table.add_column("Day", style="cyan")
     table.add_column("Assignments", style="green")
@@ -105,6 +122,42 @@ def display_week(console, week_start, assignments):
     
     console.print(table)
     console.print()
+
+def display_calendar_simple(assignments):
+    """Display assignments in a simple text format."""
+    current_week = None
+    week_assignments = []
+    
+    for assignment in assignments:
+        week_start = assignment['due_date'] - timedelta(days=assignment['due_date'].weekday())
+        
+        if current_week != week_start:
+            if current_week is not None:
+                display_week_simple(current_week, week_assignments)
+            current_week = week_start
+            week_assignments = []
+        
+        week_assignments.append(assignment)
+    
+    if week_assignments:
+        display_week_simple(current_week, week_assignments)
+
+def display_week_simple(week_start, assignments):
+    """Display assignments for a specific week in simple text format."""
+    print(f"\nWeek of {week_start.strftime('%B %d, %Y')}")
+    print("-" * 50)
+    
+    for day in range(7):
+        current_day = week_start + timedelta(days=day)
+        day_assignments = [a for a in assignments if a['due_date'].date() == current_day.date()]
+        
+        print(f"\n{current_day.strftime('%A')}:")
+        if day_assignments:
+            for assignment in day_assignments:
+                print(f"  - {assignment['name']} ({assignment['course']})")
+        else:
+            print("  No assignments")
+    print()
 
 def main():
     """Main function to run the Canvas calendar application."""
