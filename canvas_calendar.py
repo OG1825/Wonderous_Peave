@@ -92,7 +92,7 @@ def get_assignments(canvas):
                             assignments.append({
                                 'name': assignment.name,
                                 'course': course_name,
-                                'due_date': due_date
+                                'due_date': due_date.isoformat()  # Convert to ISO format for JSON
                             })
         except Exception as e:
             print(f"Error fetching assignments for course {getattr(course, 'id', 'Unknown')}: {str(e)}")
