@@ -70,36 +70,31 @@ def get_canvas_schedule():
         return []
 
 def get_assignments(canvas):
-    """Fetch assignments from specific courses for the next 10 weeks."""
+    """Fetch assignments from all courses for the next 10 weeks."""
     assignments = []
-    target_courses = ['ENG 30', 'ECON 3', 'SYN 1', 'MGT 45']
     courses = canvas.get_courses()
     
     for course in courses:
         try:
             # Get course name, fallback to course ID if name is not available
             course_name = getattr(course, 'name', f'Course {course.id}')
+            print(f"Fetching assignments for {course_name}...")
             
-            # Only process if the course name contains one of our target courses
-            if any(target in course_name.upper() for target in target_courses):
-                print(f"Fetching assignments for {course_name}...")
-                
-                course_assignments = course.get_assignments()
-                for assignment in course_assignments:
-                    if assignment.due_at:
-                        due_date = datetime.strptime(assignment.due_at, '%Y-%m-%dT%H:%M:%SZ')
-                        if due_date <= datetime.now() + timedelta(weeks=10):
-                            assignments.append({
-                                'name': assignment.name,
-                                'course': course_name,
-                                'due_date': due_date.isoformat()  # Convert to ISO format for JSON
-                            })
+            course_assignments = course.get_assignments()
+            for assignment in course_assignments:
+                if assignment.due_at:
+                    due_date = datetime.strptime(assignment.due_at, '%Y-%m-%dT%H:%M:%SZ')
+                    if due_date <= datetime.now() + timedelta(weeks=10):
+                        assignments.append({
+                            'name': assignment.name,
+                            'course': course_name,
+                            'due_date': due_date.isoformat()  # Convert to ISO format for JSON
+                        })
         except Exception as e:
             print(f"Error fetching assignments for course {getattr(course, 'id', 'Unknown')}: {str(e)}")
     
     if not assignments:
-        print("\nNo assignments found for the specified courses (ENG 30, ECON 3, SYN 1, MGT 45)")
-        print("Please check if the course names match exactly with your Canvas courses.")
+        print("\nNo assignments found for the next 10 weeks.")
     
     return sorted(assignments, key=lambda x: x['due_date'])
 
