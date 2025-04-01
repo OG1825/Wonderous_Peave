@@ -38,6 +38,13 @@ def home():
         }
     })
 
+@app.route('/api/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat()
+    })
+
 @app.route('/api/all')
 def get_all_data():
     try:
@@ -45,21 +52,21 @@ def get_all_data():
         assignments = get_canvas_assignments()
         schedule = get_canvas_schedule()
         logger.info(f"Found {len(assignments)} assignments and {len(schedule)} schedule items")
-        return jsonify({
+        
+        response_data = {
             'assignments': assignments,
-            'schedule': schedule
-        })
+            'schedule': schedule,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(response_data)
     except Exception as e:
         logger.error(f"Error fetching data: {str(e)}")
         return jsonify({
             'error': str(e),
-            'assignments': [],
-            'schedule': []
+            'status': 'error',
+            'timestamp': datetime.now().isoformat()
         }), 500
-
-@app.route('/api/health')
-def health_check():
-    return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
